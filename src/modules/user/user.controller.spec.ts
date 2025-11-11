@@ -14,7 +14,8 @@ describe('user controller', () => {
     const module = await Test.createTestingModule({
       imports: [
         MikroOrmModule.forRoot({
-          ...config,
+          ...config, // never move this line under any other line
+
           dbName: 'mobile-demo-testing',
           allowGlobalContext: true,
         }),

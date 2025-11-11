@@ -6,8 +6,39 @@ import { MikroORM } from '@mikro-orm/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
+import { WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
+import { LoggingWinston } from '@google-cloud/logging-winston';
+
+function createWinstonOptions() {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const consoleFormat = winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.colorize(),
+    winston.format.simple(),
+  );
+
+  const transports: winston.transport[] = [];
+
+  if (isProduction) {
+    transports.push(new LoggingWinston());
+  }
+  transports.push(new winston.transports.Console({
+    format: consoleFormat,
+  }));
+
+  return {
+    level: isProduction ? 'warn' : 'info',
+    transports
+  };
+}
+
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(createWinstonOptions()),
+  });
+
   await app.get(MikroORM).getSchemaGenerator().ensureDatabase();
   await app.get(MikroORM).getSchemaGenerator().updateSchema();
 
